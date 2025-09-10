@@ -12,7 +12,7 @@ from datasets.linemod_dataset import LineMODDataset
 from utils.voting import ransac_voting
 
 # ----------------- CONFIG -----------------
-DATA_ROOT = r"../datasets/LINEMOD/cat"   # <<< your provided path
+DATA_ROOT = r"..\datasets\LINEMOD\cat"   # <<< your provided path
 DEFAULT_CKPT = os.path.join("checkpoints", "pvnet_epoch1.pth")
 NUM_TEST_IMAGES = 2
 NUM_CLASSES = 1

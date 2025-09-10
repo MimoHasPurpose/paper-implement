@@ -5,7 +5,7 @@ import torch.nn.functional as F
 from torch.utils.data import DataLoader
 
 # --------- USER CONFIG ----------
-DATA_ROOT = "../datasets/LINEMOD/cat"
+DATA_ROOT = "..\datasets\LINEMOD\cat"
 BATCH_SIZE = 1
 EPOCHS = 1
 LR = 1e-3
@@ -57,11 +57,13 @@ def compute_vector_loss(vec_pred, vec_gt, mask_s):
 
 # training loop
 for epoch in range(1, EPOCHS + 1):
-    print("starting epoch")
+    print("starting epoch 1")
     model.train()
     epoch_loss = 0.0
+    # print("starting epoch 2")
     n_samples = 0
     t0 = time.time()
+    # print("starting epoch 3")
 
     for batch in loader:
         print("loading photos")

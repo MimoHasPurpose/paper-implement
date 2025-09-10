@@ -2,7 +2,7 @@
 # Flexible LINEMOD loader tuned to varied folder layouts.
 # Outputs a dict with keys: image (Tensor C,H,W float [0..1]), vec_gt (2K,Hs,Ws),
 # mask_s (Hs,Ws), kpts2d (K,2), K (3x3), R (3x3), t (3,)
-#
+import pdb
 import os
 import csv
 import json
@@ -35,8 +35,9 @@ class LineMODDataset(Dataset):
         obj_path: Either the object folder (e.g. ".../LINEMOD/cat") or parent folder.
         """
         # Resolve object folder
-        if os.path.isdir(os.path.join(obj_path, 'JPEGImages')) or os.path.isdir(os.path.join(obj_path,'mask')):
-            self.root = obj_path
+        if os.path.isdir(os.path.join(obj_path, 'JPEGImages')) or os.path.isdir(os.path.join(obj_path,'mask')): # checking if image folder and masks folder exists
+            self.root = obj_path ## root set to object path
+            print("break:",os.path.isdir(os.path.join(obj_path,'JPEGImages')))
         else:
             candidates = [os.path.join(obj_path, d) for d in os.listdir(obj_path) if os.path.isdir(os.path.join(obj_path,d))]
             if len(candidates) == 1:
@@ -65,6 +66,7 @@ class LineMODDataset(Dataset):
         for name in ('JPEGImages', 'images', 'test', 'img', 'rgb'):
             p = os.path.join(self.root, name)
             if os.path.isdir(p):
+                print("break: ",os.path.isdir(p))
                 self.img_dir = p; break
         else:
             # fallback: any directory that contains jpg/png files
@@ -83,6 +85,7 @@ class LineMODDataset(Dataset):
         for name in ('mask','masks','amodal_mask'):
             p = os.path.join(self.root, name)
             if os.path.isdir(p):
+                print("break:",name, os.path.isdir(p))
                 self.mask_dir = p; break
         else:
             self.mask_dir = None
@@ -93,7 +96,9 @@ class LineMODDataset(Dataset):
         self.dist = np.zeros((5,), dtype=np.float32)
         for c in K_candidates:
             p = os.path.join(self.root, c)
+            # print("break: camera intrinsics:", p)
             if os.path.exists(p):
+                print("break: camera intrinsics:", p)
                 try:
                     with open(p,'r') as f:
                         j = json.load(f)
@@ -109,7 +114,7 @@ class LineMODDataset(Dataset):
 
         if self.K is None:
             # default focal, center guess - user should replace with real intrinsics or put a meta.json
-            print("Warning: no camera intrinsics found (camera.json/meta.json). Using a default K.")
+            # print("Warning: no camera intrinsics found (camera.json/meta.json). Using a default K.")
             self.K = np.array([[600.,0.,self.input_size/2.],
                                [0.,600.,self.input_size/2.],
                                [0.,0.,1.]], dtype=np.float32)
@@ -117,29 +122,57 @@ class LineMODDataset(Dataset):
         # load poses: prefer CSV splits, else per-image pose files, else test.json/test.pkl
         self.items = []
         csv_candidates = [os.path.join(self.root,'train_split.csv'), os.path.join(self.root,'test_split.csv')]
+        print("break:csv",csv_candidates[0],csv_candidates[1])
+        a="E:\\1Github\\Research\\paper-implement\\datasets\\LINEMOD\\cat\\train_split.csv"
+        b="E:\\1Github\\Research\\paper-implement\\datasets\\LINEMOD\\cat\\test_split.csv"
+
+        csv_candidates[0]=a
+        csv_candidates[1]=b
+        
+        
         csv_found = None
         for c in csv_candidates:
             if os.path.exists(c):
+                # print(c)
                 csv_found = c
                 break
-        if csv_found:
+        # print("break",csv_found)
+        if False: #real value was csv_found but i falsed it
+            print("oky",csv_found)
             with open(csv_found, newline='') as f:
                 reader = csv.DictReader(f)
+                # print(reader)
                 for r in reader:
-                    R = np.fromstring(r['R'], sep=' ').reshape(3,3).astype(np.float32)
-                    t = np.fromstring(r['t'], sep=' ').astype(np.float32)
+                    # train_split.csv, and test_split.csv are not as per this format!
+                    # R = np.fromstring(r['R'], sep=' ').reshape(3,3).astype(np.float32)
+                    R = np.array([float(x) for x in r['cam_R_m2c'].split()]).reshape(3,3).astype(np.float32)
+
+                    # t = np.fromstring(r['t'], sep=' ').astype(np.float32)
+                    t = np.array([float(x) for x in r['cam_t_m2c'].split()]).astype(np.float32)
+
                     self.items.append({'image': r['image'], 'mask': r.get('mask', r['image']), 'R': R, 't': t})
+        
         else:
+            print("breaks",end="\n")
             # look for a pose folder with one file per image, or a test.json/test.pkl
             pose_dir = os.path.join(self.root, 'pose')
+            # pdb.set_trace()
             if os.path.isdir(pose_dir):
+                print("pose folder:",pose_dir)
                 img_list = sorted([os.path.basename(x) for x in glob(os.path.join(self.img_dir,'*')) if os.path.isfile(x)])
+                # print("img: ",img_list)
                 for img_name in img_list:
+                    # print("image name: ",img_name)
                     base = os.path.splitext(img_name)[0]
+                    # print("base",base)
                     for ext in ('.txt','.pose','.csv'):
                         p = os.path.join(pose_dir, base + ext)
+                        # print("p is a thing:",p)
+                        # pdb.set_trace()
                         if os.path.exists(p):
+                            # print("p exists: ",p)
                             parsed = _read_pose_txt(p)
+                            # print("parsed",parsed)
                             if parsed:
                                 R,t = parsed
                                 self.items.append({'image': img_name, 'mask': img_name, 'R': R, 't': t})
