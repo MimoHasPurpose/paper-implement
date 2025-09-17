@@ -1,4 +1,3 @@
-import pdb
 # training.py - robust PVNet training loop (drop-in)
 import os, time
 import torch
@@ -36,10 +35,7 @@ opt = torch.optim.AdamW(model.parameters(), lr=LR, weight_decay=1e-4)
 # helper: cosine vector loss (vec_pred & vec_gt must be same spatial size)
 def compute_vector_loss(vec_pred, vec_gt, mask_s):
     eps = 1e-6
-    # print("line 39: training.py",vec_pred.shape)
-    # print("line 40: training.py", vec_pred.shape[1])
     K = vec_pred.shape[1] // 2
-    print(K)
     vx = vec_pred[:, :K, :, :]
     vy = vec_pred[:, K:, :, :]
     tx = vec_gt[:, :K, :, :]
@@ -70,13 +66,11 @@ for epoch in range(1, EPOCHS + 1):
     # print("starting epoch 3")
 
     for batch in loader:
-        
         print("loading photos")
         image = batch['image'].to(device, non_blocking=True)    # [B,3,H,W]
-        # print("line 74",image)
         vec_gt = batch['vec_gt'].to(device, non_blocking=True)  # [B,2K,Hs,Ws]
         mask_s = batch['mask_s'].to(device, non_blocking=True)  # [B,Hs,Ws]
-        # pdb.set_trace()
+
         # forward
         out = model(image)
         if isinstance(out, (tuple, list)):
@@ -95,12 +89,10 @@ for epoch in range(1, EPOCHS + 1):
                                   mode='bilinear', align_corners=False)
 
         # vector loss
-        print("97")
         loss_vec = compute_vector_loss(vec_pred, vec_gt, mask_s)
-        print("99")
+
         # segmentation loss handling (ensure shapes match)
         seg_loss = 0.0
-        print("102")
         if seg_pred_full is not None:
             # downsample seg logits to supervision resolution
             seg_pred = F.interpolate(seg_pred_full, size=(target_h, target_w),

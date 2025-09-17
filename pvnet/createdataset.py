@@ -1,5 +1,5 @@
 from datasets.linemod_dataset import LineMODDataset
-ds = LineMODDataset("./LINEMOD/cat", input_size=480, training=False)
+ds = LineMODDataset("../datasets/LINEMOD/cat", input_size=480, training=False)
 print("Dataset size:", len(ds))
 s = ds[0]
 print("image:", s['image'].shape)

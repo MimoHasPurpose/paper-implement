@@ -1,18 +1,24 @@
 # parse_coco_pose.py
 import os, json, csv, numpy as np, sys
-
-ROOT = "./LINEMOD/cat"  # EDIT if needed
+import pdb;
+# pdb.set_trace()
+ROOT = "../datasets/LINEMOD/cat"  # EDIT if needed
 POSE_OUT = os.path.join(ROOT, "pose")
+print(os.path.exists(ROOT))
+print(os.path.exists(POSE_OUT))
 os.makedirs(POSE_OUT, exist_ok=True)
 
 json_path = os.path.join(ROOT, "test.json")
+print("json path:",os.path.exists(json_path))
 if not os.path.exists(json_path):
     raise SystemExit(f"No test.json at {json_path}")
 
 data = json.load(open(json_path, 'r'))
+# print(data['images'])
 
 # Build image id -> filename mapping
 images = data.get('images', [])
+print(images)
 imgid2name = {}
 for img in images:
     fname = img.get('file_name') or img.get('file') or img.get('filename')
@@ -78,7 +84,7 @@ def try_extract_pose_from_ann(ann):
         if isinstance(v, (list, tuple, np.ndarray)) and len(nums_from_obj(v)) >= 12:
             nums = nums_from_obj(v)
             return nums[:9], nums[9:12]
-
+    print(candidates)
     # Try direct separate fields: R (matrix-like) and t
     # If ann contains 'R' and 't' separately (or cam_R_m2c / cam_t_m2c)
     R_keys = ['R','r','rotation','cam_R_m2c','cam_R','R_mat','rotation_matrix']
@@ -120,6 +126,7 @@ skipped = []
 import cv2  # need for Rodrigues conversion if used
 
 for img_id, fname in imgid2name.items():
+    # print(img_id, fname)
     anns_for_img = by_img.get(img_id, [])
     # If multiple annotations, pick first that yields pose
     found = False
