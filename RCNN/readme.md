@@ -1,0 +1,2 @@
+- dataset is saved in drive
+- dataset was taken from 'https://github.com/Hulkido/RCNN/tree/master'
